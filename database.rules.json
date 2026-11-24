@@ -2,14 +2,10 @@
   "rules": {
     ".read": false,
     ".write": false,
-    "operators": {
-      ".read": false,
-      ".write": false
-    },
     "elections": {
       "wujie7-2026": {
-        ".read": "auth != null && root.child('operators').child(auth.uid).val() === true",
-        ".write": "auth != null && root.child('operators').child(auth.uid).val() === true"
+        ".read": "auth != null && auth.uid === 'ttfDgeuiHdOGwX139LJHhNq7y6G2'",
+        ".write": "auth != null && auth.uid === 'ttfDgeuiHdOGwX139LJHhNq7y6G2'"
       }
     }
   }
