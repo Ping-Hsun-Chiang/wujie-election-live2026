@@ -47,7 +47,7 @@
           '<div class="ui-modal-body">' + (opts.body || '') + '</div>' +
           (opts.requireText ? '<input class="ui-require" type="text" autocomplete="off" placeholder="請輸入「' + esc(opts.requireText) + '」">' : '') +
           '<div class="ui-modal-actions">' +
-            '<button type="button" class="btn btn-ghost" data-act="cancel">' + esc(opts.cancelText || '返回修改') + ' <kbd>Esc</kbd></button>' +
+            (opts.hideCancel ? '' : '<button type="button" class="btn btn-ghost" data-act="cancel">' + esc(opts.cancelText || '返回修改') + ' <kbd>Esc</kbd></button>') +
             '<button type="button" class="btn ' + (opts.danger ? 'btn-danger' : 'btn-primary') + '" data-act="ok">' + esc(opts.confirmText || '確認') + ' <kbd>Enter</kbd></button>' +
           '</div>' +
         '</div>';

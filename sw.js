@@ -11,6 +11,8 @@ var ASSETS = [
   './css/admin.css',
   './js/data.js',
   './js/store.js',
+  './js/firebase-config.js',
+  './js/cloud.js',
   './js/board.js',
   './js/ui.js',
   './js/tools.js',

@@ -69,8 +69,6 @@ kbd {
   color: var(--muted);
 }
 .adm-sync i { width: 10px; height: 10px; border-radius: 50%; background: var(--none); }
-.adm-sync[data-on="1"] { color: #BBF7D0; }
-.adm-sync[data-on="1"] i { background: var(--done); box-shadow: 0 0 8px var(--done); }
 .adm-actions { display: flex; gap: 8px; }
 
 /* ---------- 主區 ---------- */
@@ -363,4 +361,47 @@ kbd {
   .v-prev { display: none; }
   .grid { grid-template-columns: repeat(5, 1fr); }
   #codeInput { width: 110px; font-size: 34px; }
+}
+
+/* ---------- 同步狀態徽章 ---------- */
+button.adm-sync { border: 1px solid transparent; cursor: pointer; }
+button.adm-sync:hover { border-color: var(--line); }
+.adm-sync[data-state="ok"] { color: #BBF7D0; }
+.adm-sync[data-state="ok"] i { background: var(--done); box-shadow: 0 0 8px var(--done); }
+.adm-sync[data-state="wait"] { color: #FEF08A; }
+.adm-sync[data-state="wait"] i { background: var(--partial); }
+.adm-sync[data-state="warn"] { color: #FDE68A; border-color: rgba(250, 204, 21, 0.5); }
+.adm-sync[data-state="warn"] i { background: var(--gold-2); animation: pulse 1.2s infinite; }
+.adm-sync[data-state="err"] { color: #FECACA; border-color: #F87171; }
+.adm-sync[data-state="err"] i { background: #EF4444; }
+@keyframes pulse { 50% { opacity: 0.3; } }
+
+.ui-field { display: block; margin-top: 10px; font-weight: 700; }
+.ui-field input {
+  display: block; width: 100%; margin-top: 4px; padding: 10px 12px;
+  border-radius: 8px; border: 1px solid #334155; background: #020617;
+  font-size: 18px; font-weight: 400;
+}
+.ui-field input:focus { outline: none; border-color: #60A5FA; box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3); }
+.ui-check { display: flex; align-items: center; gap: 8px; margin: 10px 0 4px; }
+.ui-check input { width: 18px; height: 18px; }
+.ui-note { font-size: 13px; color: var(--muted) !important; }
+.ui-inline-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+/* ---------- 平板觸控優化 ---------- */
+@media (pointer: coarse) {
+  .adm { padding: 10px; }
+  .btn { min-height: 44px; }
+  .btn-sm { min-height: 40px; font-size: 14px; }
+  .keys, .status-row .hint { display: none; }
+  .seg button { padding: 10px 22px; font-size: 17px; }
+  .v-row { padding: 8px 10px; }
+  .v-input { font-size: 38px; padding: 6px 12px; }
+  #codeInput { font-size: 46px; }
+  .g-cell { min-height: 58px; }
+  .adm-sync { font-size: 14px; padding: 8px 14px; }
+}
+@media (max-width: 1100px) {
+  .adm-top { flex-wrap: wrap; }
+  .adm-sync { order: 3; width: 100%; margin-left: 0; justify-content: center; }
 }

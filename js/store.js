@@ -128,20 +128,88 @@
     }
   });
 
+  // 寫入本機並通知同瀏覽器的其他視窗
+  function saveLocal(source) {
+    safeSet(KEY, JSON.stringify(state));
+    if (bc) bc.postMessage({ type: 'state', state: state });
+    emit(source);
+  }
+
   function commit(next) {
     next.rev = state.rev + 1;
     next.updatedAt = Date.now();
     if (next.log.length > LOG_LIMIT) next.log = next.log.slice(-LOG_LIMIT);
     state = next;
-    safeSet(KEY, JSON.stringify(state));
-    if (bc) bc.postMessage({ type: 'state', state: state });
-    emit('local');
+    saveLocal('local');
+    if (cloud && cloud.writer) {
+      sync.dirty = true;
+      saveSync();
+      pushCloud();
+    }
   }
 
   function pushUndo(label) {
     undoStack.push({ label: label, ts: Date.now(), state: clone(state) });
     if (undoStack.length > UNDO_LIMIT) undoStack = undoStack.slice(-UNDO_LIMIT);
     safeSet(UNDO_KEY, JSON.stringify(undoStack));
+  }
+
+  // ---------- 雲端同步（由 cloud.js 掛上） ----------
+  // dirty：本機有尚未被雲端確認的修改；syncedRev：最後一次與雲端一致的版本號
+  var SYNC_KEY = 'wujie7-live2026:sync:v1';
+  var sync = (function () {
+    try { return JSON.parse(safeGet(SYNC_KEY) || '{}') || {}; } catch (e) { return {}; }
+  })();
+  var cloud = null;
+  var syncListeners = [];
+
+  function saveSync() { safeSet(SYNC_KEY, JSON.stringify(sync)); }
+  function emitSync(evt) {
+    syncListeners.forEach(function (fn) { try { fn(sync, evt || {}); } catch (e) { console.error(e); } });
+  }
+
+  function pushCloud() {
+    if (!cloud || !cloud.writer) return;
+    var sent = state;
+    emitSync();
+    cloud.push(sent).then(function () {
+      sync.syncedRev = sent.rev;
+      if (state.rev === sent.rev) sync.dirty = false;
+      saveSync();
+      emitSync();
+    }, function () { emitSync({ error: true }); });
+  }
+
+  function receiveCloud(remote) {
+    var writer = cloud && cloud.writer;
+    if (!remote || !remote.stations) {
+      if (writer) { sync.dirty = true; saveSync(); pushCloud(); } // 雲端尚無資料：以本機資料初始化
+      return;
+    }
+    var r = normalize(remote);
+    // 自己剛寫入的資料回傳（或已一致）
+    if (r.rev === state.rev && r.updatedAt === state.updatedAt) return;
+
+    var conflict = false;
+    if (writer && sync.forcePush) {
+      sync.forcePush = false;
+      sync.dirty = true;
+      saveSync();
+      pushCloud();
+      return;
+    }
+    if (writer && sync.dirty) {
+      if (r.rev <= (sync.syncedRev || 0)) { pushCloud(); return; } // 雲端未被他人更動 → 補傳本機修改
+      // 雲端已被其他裝置更新：採用雲端版本，本機未上傳的版本保留在 Undo 可還原
+      pushUndo('衝突前的本機版本（未上傳）');
+      conflict = true;
+    }
+    state = r;
+    sync.dirty = false;
+    sync.syncedRev = r.rev;
+    saveSync();
+    saveLocal('cloud');
+    emitSync(conflict ? { conflict: true } : {});
   }
 
   // ---------- 對外 API ----------
@@ -189,6 +257,14 @@
     // 跨視窗輕量訊息（投影牆連線偵測）
     post: function (msg) { if (bc) bc.postMessage(msg); },
     onMessage: function (fn) { msgListeners.push(fn); },
+
+    // 雲端同步掛勾：c = { writer: 是否可寫入, push(state) → Promise }，傳 null 代表斷開
+    setCloud: function (c) { cloud = c; emitSync(); },
+    receiveCloud: receiveCloud,
+    syncInfo: function () { return { dirty: !!sync.dirty, syncedRev: sync.syncedRev || 0, forcePush: !!sync.forcePush }; },
+    onSync: function (fn) { syncListeners.push(fn); },
+    // 下次連上雲端時，以本機資料覆蓋雲端
+    requestForcePush: function () { sync.forcePush = true; saveSync(); },
 
     normalize: normalize,
     createEmpty: createEmpty,

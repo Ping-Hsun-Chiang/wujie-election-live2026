@@ -437,3 +437,30 @@ body.is-board { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .board *, .board *::before, .board *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- 雲端同步狀態（左下角，低調顯示） ---------- */
+.bd-sync {
+  position: absolute;
+  left: calc(var(--u) * 0.6);
+  bottom: calc(var(--u) * 0.4);
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: var(--muted);
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  z-index: 10;
+  pointer-events: none;
+}
+.bd-sync i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.bd-sync[data-phase="local"] { display: none; }
+.bd-sync[data-phase="online"] { opacity: 0.45; }
+.bd-sync[data-phase="online"] i { background: var(--done); }
+.bd-sync[data-phase="offline"] i, .bd-sync[data-phase="loading"] i { background: var(--partial); }
+.bd-sync[data-phase="signed-out"], .bd-sync[data-phase="error"] { color: #FECACA; border-color: #F87171; }
+.bd-sync[data-phase="signed-out"] i, .bd-sync[data-phase="error"] i { background: #EF4444; }
+/* 全螢幕或閒置時只留一個小圓點；正常同步時完全隱藏 */
+.board.is-fullscreen .bd-sync, .board.is-idle .bd-sync { padding: 0; border: 0; background: none; }
+.board.is-fullscreen .bd-sync span, .board.is-idle .bd-sync span { display: none; }
+.board.is-fullscreen .bd-sync[data-phase="online"], .board.is-idle .bd-sync[data-phase="online"] { display: none; }

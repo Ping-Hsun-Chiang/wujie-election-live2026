@@ -122,6 +122,7 @@
         '</footer>' +
 
         '<button class="bd-admin-link" id="bdAdminLink" type="button" title="於新視窗開啟計票後台（按 F 切換全螢幕）">開啟計票後台視窗 ↗</button>' +
+        '<div class="bd-sync" id="bdSync" data-phase="local" role="status"><i></i><span></span></div>' +
       '</div>';
   }
 
@@ -249,6 +250,20 @@
 
     tickClock(root);
     setInterval(function () { tickClock(root); }, 1000);
+
+    // 雲端同步狀態（單機模式時不顯示）
+    var SYNC_TEXT = {
+      loading: '☁ 連線雲端中…',
+      'signed-out': '☁ 未登入雲端：請在此電腦開啟計票後台登入',
+      offline: '☁ 離線中：顯示最後收到的資料',
+      online: '☁ 雲端同步中'
+    };
+    var syncEl = root.querySelector('#bdSync');
+    window.Cloud.onChange(function (c) {
+      syncEl.setAttribute('data-phase', c.phase);
+      syncEl.querySelector('span').textContent = c.phase === 'error' ? '⚠ ' + c.error : (SYNC_TEXT[c.phase] || '');
+    });
+    window.Cloud.init('board');
 
     var link = root.querySelector('#bdAdminLink');
     link.addEventListener('click', openAdmin);

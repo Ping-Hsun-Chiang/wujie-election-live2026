@@ -22,7 +22,7 @@
         '<label class="v-row' + (c.focus ? ' is-focus' : '') + '" style="--c:' + c.color + '">' +
           '<span class="v-badge num">' + c.no + '</span>' +
           '<span class="v-name"><b>' + esc(c.name) + '</b><small>' + esc(c.party) + (c.focus ? '・★ 本陣營' : '') + '</small></span>' +
-          '<input class="v-input num" data-idx="' + i + '" type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="0" disabled>' +
+          '<input class="v-input num" data-idx="' + i + '" type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="' + (i === N - 1 ? 'send' : 'next') + '" autocomplete="off" maxlength="5" placeholder="0" disabled>' +
           '<span class="v-prev num" data-prev="' + i + '"></span>' +
         '</label>';
     }).join('');
@@ -36,7 +36,7 @@
       '<div class="adm">' +
         '<header class="adm-top">' +
           '<div class="adm-title"><b>單人極速計票台</b><span>' + esc(E.districtName) + '</span></div>' +
-          '<div class="adm-sync" id="admSync" data-on="0"><i></i><span>偵測投影牆中…</span></div>' +
+          '<button type="button" class="adm-sync" id="admSync" data-state="local" title="同步設定"><i></i><span>偵測同步狀態中…</span></button>' +
           '<div class="adm-actions">' +
             '<button type="button" class="btn btn-ghost" id="btnUndo" title="還原上一筆操作（Alt+Z）">↶ 還原上一筆 <kbd>Alt+Z</kbd></button>' +
             '<button type="button" class="btn btn-ghost" id="btnOpenBoard">開啟投影戰情牆 ↗</button>' +
@@ -49,7 +49,7 @@
               '<div class="code-box">' +
                 '<label for="codeInput">投開票所編號 <small>輸入後 2 碼（57～95）或完整 4 碼，按 <kbd>Enter</kbd></small></label>' +
                 '<div class="code-row">' +
-                  '<input id="codeInput" class="num" type="text" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="57" autofocus>' +
+                  '<input id="codeInput" class="num" type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next" autocomplete="off" maxlength="4" placeholder="57" autofocus>' +
                   '<div class="station-info" id="stationInfo"><div class="si-empty">尚未鎖定投開票所</div></div>' +
                 '</div>' +
               '</div>' +
@@ -402,7 +402,9 @@
     }
   }
 
-  // ---------- 投影牆連線偵測 ----------
+  // ---------- 同步狀態（雲端／單機）與投影牆連線偵測 ----------
+  var localBoards = 0;
+
   function startPing() {
     var myId = Math.random().toString(36).slice(2, 8);
     var seen = {};
@@ -410,16 +412,118 @@
     function tick() {
       var now = Date.now();
       var n = Object.keys(seen).filter(function (k) { return now - seen[k] < 5000; }).length;
-      els.admSync.setAttribute('data-on', n ? '1' : '0');
-      var parts = [];
-      parts.push(n ? '投影牆已連線 ×' + n : '尚未偵測到投影牆視窗');
-      if (!S.channelOk) parts.push('（使用 storage 同步）');
-      if (!S.storageOk) parts.push('⚠ 無法寫入 localStorage');
-      els.admSync.querySelector('span').textContent = parts.join(' ');
+      if (n !== localBoards) { localBoards = n; renderSync(); }
       S.post({ type: 'ping', id: myId });
     }
     tick();
     setInterval(tick, 2000);
+  }
+
+  function renderSync() {
+    var c = window.Cloud.state;
+    var info = S.syncInfo();
+    var busy = info.dirty || c.pending > 0;
+    var boards = Math.max(c.boards || 0, localBoards);
+    var cls, text;
+    switch (c.phase) {
+      case 'loading': cls = 'wait'; text = '☁ 連線雲端中…'; break;
+      case 'signed-out': cls = 'warn'; text = '☁ 尚未登入雲端・點此登入'; break;
+      case 'offline':
+        cls = 'warn';
+        text = '☁ 離線中・' + (info.dirty ? '有資料待上傳（恢復連線自動補傳）' : '資料已存本機');
+        break;
+      case 'online':
+        cls = busy ? 'wait' : 'ok';
+        text = (busy ? '☁ 上傳中…' : '☁ 雲端已同步') + '・投影牆 ' + (boards ? '×' + boards : '未連線');
+        break;
+      case 'error': cls = 'err'; text = '⚠ ' + c.error; break;
+      default:
+        cls = localBoards ? 'ok' : 'local';
+        text = '單機模式・' + (localBoards ? '投影牆已連線 ×' + localBoards : '尚未偵測到投影牆視窗');
+    }
+    if (!S.storageOk) text += '（⚠ 無法寫入本機儲存）';
+    els.admSync.setAttribute('data-state', cls);
+    els.admSync.querySelector('span').textContent = text;
+  }
+
+  function openLogin() {
+    window.UI.modal({
+      title: '登入雲端同步',
+      body: '<p>請使用操作人員帳號登入。登入後此裝置會記住登入狀態，同一瀏覽器的投影牆也會自動同步。</p>' +
+        '<label class="ui-field">Email<input id="loginEmail" type="email" autocomplete="username" inputmode="email"></label>' +
+        '<label class="ui-field">密碼<input id="loginPw" type="password" autocomplete="current-password"></label>',
+      confirmText: '登入',
+      cancelText: '取消',
+      onConfirm: function (body) {
+        var email = body.querySelector('#loginEmail').value.trim();
+        var pw = body.querySelector('#loginPw').value;
+        if (!email || !pw) { window.UI.toast('請輸入 Email 與密碼', 'err'); return false; }
+        return { email: email, pw: pw };
+      }
+    }).then(function (r) {
+      if (!r.ok) return;
+      window.UI.toast('登入中…', 'warn');
+      window.Cloud.signIn(r.value.email, r.value.pw).then(function () {
+        window.UI.toast('✔ 已登入雲端：' + esc(r.value.email));
+        focusCode();
+      }, function (e) {
+        window.UI.toast(esc(e.message), 'err');
+        openLogin();
+      });
+    });
+  }
+
+  function openSyncPanel() {
+    var C = window.Cloud;
+    var c = C.state;
+    var info = S.syncInfo();
+    var body, actions = '';
+    if (!C.configured) {
+      body = '<p>尚未設定 Firebase 雲端專案，目前僅能使用<b>單機模式</b>（同一台電腦的後台與投影牆同步）。</p>';
+    } else if (c.mode === 'local') {
+      body = '<p>目前為<b>單機模式</b>：只與同一瀏覽器的投影牆同步，不使用網路。</p>' +
+        '<label class="ui-check"><input type="checkbox" id="forcePush"> 以這台裝置的資料<b>覆蓋雲端</b>（例如斷網期間改用單機模式輸入）</label>' +
+        '<p class="ui-note">不勾選則切換後採用雲端上的資料。</p>';
+      actions = '<button type="button" class="btn btn-primary" data-sync="to-cloud">切換為雲端同步</button>';
+    } else {
+      body = '<p>目前為<b>雲端同步模式</b>：平板輸入、電腦投影即時同步。</p>' +
+        '<p>帳號：<b>' + (c.user ? esc(c.user.email) : '尚未登入') + '</b><br>' +
+        '狀態：' + esc(els.admSync.querySelector('span').textContent) + '<br>' +
+        '本機資料版本：' + S.get().rev + (info.dirty ? '（有未上傳的修改）' : '') + '</p>';
+      actions = (c.user
+        ? '<button type="button" class="btn" data-sync="logout">登出</button>'
+        : '<button type="button" class="btn btn-primary" data-sync="login">登入</button>') +
+        '<button type="button" class="btn btn-ghost" data-sync="to-local">切換為單機模式</button>';
+    }
+    window.UI.modal({
+      title: '同步設定',
+      body: body + (actions ? '<div class="ui-inline-actions">' + actions + '</div>' : ''),
+      confirmText: '關閉',
+      hideCancel: true,
+      onMount: function (b) {
+        b.addEventListener('click', function (e) {
+          var btn = e.target.closest('[data-sync]');
+          if (!btn) return;
+          var act = btn.getAttribute('data-sync');
+          var force = b.querySelector('#forcePush');
+          var forceChecked = force && force.checked;
+          b.closest('.ui-modal').querySelector('[data-act="ok"]').click();
+          if (act === 'login') openLogin();
+          else if (act === 'logout') C.signOut().then(function () { window.UI.toast('已登出雲端', 'warn'); });
+          else if (act === 'to-local') {
+            window.UI.modal({
+              title: '切換為單機模式',
+              body: '<p>此裝置將停止與雲端同步，改為只與同一瀏覽器的投影牆同步。同一瀏覽器已開啟的投影牆會自動重新載入。</p>',
+              confirmText: '確定切換'
+            }).then(function (r) { if (r.ok) { C.setMode('local'); window.location.reload(); } });
+          } else if (act === 'to-cloud') {
+            if (forceChecked) S.requestForcePush();
+            C.setMode('cloud');
+            window.location.reload();
+          }
+        });
+      }
+    });
   }
 
   function openBoard() {
@@ -493,6 +597,18 @@
     S.subscribe(renderAll);
     clearEntry();
     renderAll();
+
+    els.admSync.addEventListener('click', function () {
+      var c = window.Cloud.state;
+      if (c.phase === 'signed-out') openLogin();
+      else openSyncPanel();
+    });
+    window.Cloud.onChange(renderSync);
+    S.onSync(function (info, evt) {
+      renderSync();
+      if (evt.conflict) window.UI.toast('雲端資料已被其他裝置更新，已改用雲端版本；本機未上傳的版本可用「還原上一筆」取回', 'warn');
+    });
+    window.Cloud.init('admin');
     startPing();
     if (window.AdminTools) window.AdminTools.mount(els.toolsCard, { reload: function () { if (current) loadStation(current); } });
     focusCode();
