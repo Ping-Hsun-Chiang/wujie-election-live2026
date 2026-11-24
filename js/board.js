@@ -40,8 +40,6 @@
     }
   }
 
-  function signed(n) { return (n >= 0 ? '+' : '−') + S.fmt(Math.abs(n)); }
-
   // ---------- 版面 ----------
   function template() {
     var focus = E.candidates.filter(function (c) { return c.no === E.focusNo; })[0];
@@ -51,7 +49,7 @@
           '<div class="r-rank"><span class="num" data-k="rank">-</span></div>' +
           '<div class="r-badge num">' + c.no + '</div>' +
           '<div class="r-info">' +
-            '<div class="r-name">' + (c.focus ? '<span class="r-mine" title="本陣營">★</span>' : '') + esc(c.name) +
+            '<div class="r-name">' + esc(c.name) +
               '<span class="r-party">' + esc(c.party) + '</span>' +
             '</div>' +
             '<div class="r-bar"><i data-k="bar"></i></div>' +
@@ -73,10 +71,12 @@
           '</div>' +
           '<div class="bd-progress">' +
             '<div class="bd-progress-text">' +
-              '<span>已開完：<b class="num" id="bdDone">0</b> / ' + E.stationCodes.length + ' 所 <b class="num bd-pct" id="bdDonePct">(0.0%)</b></span>' +
-              '<span class="bd-partial-tag">期中 <b class="num" id="bdPartial">0</b> 所</span>' +
+              '已開完：<b class="num" id="bdDone">0</b> / ' + E.stationCodes.length + ' 所 <b class="num bd-pct" id="bdDonePct">(0.0%)</b>' +
             '</div>' +
-            '<div class="bd-progress-bar"><i class="p-done" id="bdBarDone"></i><i class="p-partial" id="bdBarPartial"></i></div>' +
+            '<div class="bd-progress-row">' +
+              '<div class="bd-progress-bar"><i class="p-done" id="bdBarDone"></i><i class="p-partial" id="bdBarPartial"></i></div>' +
+              '<span class="bd-partial-tag">期中回報 <b class="num" id="bdPartial">0</b> 所</span>' +
+            '</div>' +
           '</div>' +
           '<div class="bd-valid"><div class="lbl">累計有效票</div><div class="num val" id="bdValid" data-val="0">0</div></div>' +
           '<div class="bd-clock"><div class="num t" id="bdTime">--:--:--</div><div class="d" id="bdDate"></div></div>' +
@@ -151,10 +151,10 @@
       q('heroGapLbl').textContent = '等待開票中・票數即時更新';
       q('heroGapVal').textContent = '';
     } else if (gap.state === 'safe') {
-      q('heroGapLbl').textContent = gap.diff === 0
-        ? '目前與第 ' + (E.seats + 1) + ' 名（落選頭）同票'
-        : '目前領先第 ' + (E.seats + 1) + ' 名（落選頭）';
-      animateNumber(q('heroGapVal'), gap.diff, { fmt: function (v) { return signed(v) + ' 票'; } });
+      // 當選安全範圍內不顯示差距提示（卡片樣式由 data-state 隱藏）
+      q('heroGapLbl').textContent = '';
+      q('heroGapVal').textContent = '';
+      q('heroGapVal').setAttribute('data-val', 0);
     } else {
       q('heroGapLbl').textContent = '距離第 ' + E.seats + ' 名（當選門檻）尚差';
       animateNumber(q('heroGapVal'), gap.diff, { fmt: function (v) { return '−' + S.fmt(v) + ' 票'; } });
