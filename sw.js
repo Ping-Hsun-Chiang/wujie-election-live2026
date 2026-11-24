@@ -1,6 +1,6 @@
 /*
  * 離線快取：首次開啟後，即使服務處網路中斷，重新整理也能載入頁面。
- * 策略：先回快取、背景更新（下次重新整理即為最新版）。
+ * 策略：網路優先（有網路時一律載入最新版並更新快取），斷網時才改用快取。
  */
 var CACHE = 'wujie7-live2026-__BUILD__';
 var ASSETS = [
@@ -33,13 +33,14 @@ self.addEventListener('fetch', function (e) {
   var req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
   e.respondWith(caches.open(CACHE).then(function (cache) {
-    // 帶 query（?mode=admin）的頁面一律對應同一份 index.html
-    return cache.match(req, { ignoreSearch: true }).then(function (hit) {
-      var net = fetch(req).then(function (res) {
-        if (res && res.ok) cache.put(req.url.split('?')[0], res.clone());
-        return res;
-      }).catch(function () { return hit; });
-      return hit || net;
+    return fetch(req, { cache: 'no-cache' }).then(function (res) {
+      // 帶 query（?mode=admin）的頁面一律對應同一份 index.html
+      if (res && res.ok) cache.put(req.url.split('?')[0], res.clone());
+      return res;
+    }).catch(function () {
+      return cache.match(req, { ignoreSearch: true }).then(function (hit) {
+        return hit || Response.error();
+      });
     });
   }));
 });
