@@ -478,6 +478,16 @@
       if (window.UI.isModalOpen()) return;
       if (e.altKey && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); doUndo(); }
       else if (e.key === 'Escape') { focusCode(); }
+      else if (/^[0-9]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // 焦點意外跑掉（點到空白處）時，直接打數字會自動回到編號框
+        var t = document.activeElement;
+        var tag = t && t.tagName;
+        if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') {
+          e.preventDefault();
+          els.codeInput.focus();
+          els.codeInput.value = e.key;
+        }
+      }
     });
 
     S.subscribe(renderAll);
