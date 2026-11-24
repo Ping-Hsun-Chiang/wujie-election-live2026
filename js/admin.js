@@ -447,30 +447,9 @@
   }
 
   function openLogin() {
-    window.UI.modal({
-      title: '登入雲端同步',
-      body: '<p>請使用操作人員帳號登入。登入後此裝置會記住登入狀態，同一瀏覽器的投影牆也會自動同步。</p>' +
-        '<label class="ui-field">Email<input id="loginEmail" type="email" autocomplete="username" inputmode="email"></label>' +
-        '<label class="ui-field">密碼<input id="loginPw" type="password" autocomplete="current-password"></label>',
-      confirmText: '登入',
-      cancelText: '取消',
-      onConfirm: function (body) {
-        var email = body.querySelector('#loginEmail').value.trim();
-        var pw = body.querySelector('#loginPw').value;
-        if (!email || !pw) { window.UI.toast('請輸入 Email 與密碼', 'err'); return false; }
-        return { email: email, pw: pw };
-      }
-    }).then(function (r) {
-      if (!r.ok) return;
-      window.UI.toast('登入中…', 'warn');
-      window.Cloud.signIn(r.value.email, r.value.pw).then(function () {
-        window.UI.toast('✔ 已登入雲端：' + esc(r.value.email));
-        focusCode();
-      }, function (e) {
-        window.UI.toast(esc(e.message), 'err');
-        openLogin();
-      });
-    });
+    window.UI.cloudLogin('請使用操作人員帳號登入。登入後此裝置會記住登入狀態，同一瀏覽器的投影牆也會自動同步。<br>' +
+      '<b>注意：每台裝置都要各自登入一次</b>（平板登入不代表電腦也登入）。')
+      .then(function () { focusCode(); });
   }
 
   function openSyncPanel() {

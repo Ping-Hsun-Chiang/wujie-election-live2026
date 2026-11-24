@@ -459,8 +459,17 @@ body.is-board { overflow: hidden; }
 .bd-sync[data-phase="online"] i { background: var(--done); }
 .bd-sync[data-phase="offline"] i, .bd-sync[data-phase="loading"] i { background: var(--partial); }
 .bd-sync[data-phase="signed-out"], .bd-sync[data-phase="error"] { color: #FECACA; border-color: #F87171; }
+.bd-sync[data-phase="signed-out"] {
+  pointer-events: auto; cursor: pointer;
+  font-size: 15px; padding: 6px 14px;
+}
+.bd-sync[data-phase="signed-out"]:hover { background: rgba(127, 29, 29, 0.85); }
 .bd-sync[data-phase="signed-out"] i, .bd-sync[data-phase="error"] i { background: #EF4444; }
 /* 全螢幕或閒置時只留一個小圓點；正常同步時完全隱藏 */
 .board.is-fullscreen .bd-sync, .board.is-idle .bd-sync { padding: 0; border: 0; background: none; }
 .board.is-fullscreen .bd-sync span, .board.is-idle .bd-sync span { display: none; }
 .board.is-fullscreen .bd-sync[data-phase="online"], .board.is-idle .bd-sync[data-phase="online"] { display: none; }
+.board.is-fullscreen .bd-sync[data-phase="signed-out"], .board.is-idle .bd-sync[data-phase="signed-out"] {
+  padding: 6px 14px; border: 1px solid #F87171; background: rgba(15, 23, 42, 0.85);
+}
+.board.is-fullscreen .bd-sync[data-phase="signed-out"] span, .board.is-idle .bd-sync[data-phase="signed-out"] span { display: inline; }

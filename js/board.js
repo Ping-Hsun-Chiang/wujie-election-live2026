@@ -254,7 +254,7 @@
     // 雲端同步狀態（單機模式時不顯示）
     var SYNC_TEXT = {
       loading: '☁ 連線雲端中…',
-      'signed-out': '☁ 未登入雲端：請在此電腦開啟計票後台登入',
+      'signed-out': '☁ 此電腦尚未登入雲端・點此登入',
       offline: '☁ 離線中：顯示最後收到的資料',
       online: '☁ 雲端同步中'
     };
@@ -262,6 +262,13 @@
     window.Cloud.onChange(function (c) {
       syncEl.setAttribute('data-phase', c.phase);
       syncEl.querySelector('span').textContent = c.phase === 'error' ? '⚠ ' + c.error : (SYNC_TEXT[c.phase] || '');
+    });
+    var loggingIn = false;
+    syncEl.addEventListener('click', function () {
+      if (loggingIn || window.Cloud.state.phase !== 'signed-out') return;
+      loggingIn = true;
+      window.UI.cloudLogin('投影牆需要在<b>這台電腦</b>登入操作人員帳號，才能接收平板輸入的票數。登入後會記住，之後開啟不必再登入。')
+        .then(function () { loggingIn = false; }, function () { loggingIn = false; });
     });
     window.Cloud.init('board');
 
@@ -275,6 +282,9 @@
 
     document.addEventListener('keydown', function (e) {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (window.UI && window.UI.isModalOpen()) return;
+      var t = e.target && e.target.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA') return;
       if (e.key === 'f' || e.key === 'F') toggleFullscreen();
       if (e.key === 'a' || e.key === 'A') openAdmin();
     });

@@ -121,7 +121,36 @@
     return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes());
   }
 
+  /** 雲端登入視窗（後台與投影牆共用）；登入成功後 resolve(true)，取消 resolve(false) */
+  function cloudLogin(intro) {
+    return modal({
+      title: '登入雲端同步',
+      body: '<p>' + (intro || '請使用操作人員帳號登入。登入後此裝置會記住登入狀態。') + '</p>' +
+        '<label class="ui-field">Email<input id="loginEmail" type="email" autocomplete="username" inputmode="email"></label>' +
+        '<label class="ui-field">密碼<input id="loginPw" type="password" autocomplete="current-password"></label>',
+      confirmText: '登入',
+      cancelText: '取消',
+      onConfirm: function (body) {
+        var email = body.querySelector('#loginEmail').value.trim();
+        var pw = body.querySelector('#loginPw').value;
+        if (!email || !pw) { toast('請輸入 Email 與密碼', 'err'); return false; }
+        return { email: email, pw: pw };
+      }
+    }).then(function (r) {
+      if (!r.ok) return false;
+      toast('登入中…', 'warn');
+      return window.Cloud.signIn(r.value.email, r.value.pw).then(function () {
+        toast('✔ 已登入雲端：' + esc(r.value.email));
+        return true;
+      }, function (e) {
+        toast(esc(e.message), 'err');
+        return cloudLogin(intro);
+      });
+    });
+  }
+
   window.UI = {
+    cloudLogin: cloudLogin,
     esc: esc,
     toast: toast,
     modal: modal,
