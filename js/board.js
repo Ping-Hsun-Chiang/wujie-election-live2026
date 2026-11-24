@@ -51,9 +51,8 @@
           '<div class="r-rank"><span class="num" data-k="rank">-</span></div>' +
           '<div class="r-badge num">' + c.no + '</div>' +
           '<div class="r-info">' +
-            '<div class="r-name">' + esc(c.name) +
+            '<div class="r-name">' + (c.focus ? '<span class="r-mine" title="本陣營">★</span>' : '') + esc(c.name) +
               '<span class="r-party">' + esc(c.party) + '</span>' +
-              (c.focus ? '<span class="r-mine">★ 本陣營</span>' : '') +
             '</div>' +
             '<div class="r-bar"><i data-k="bar"></i></div>' +
           '</div>' +
@@ -75,7 +74,7 @@
           '<div class="bd-progress">' +
             '<div class="bd-progress-text">' +
               '<span>已開完：<b class="num" id="bdDone">0</b> / ' + E.stationCodes.length + ' 所 <b class="num bd-pct" id="bdDonePct">(0.0%)</b></span>' +
-              '<span class="bd-partial-tag">期中回報 <b class="num" id="bdPartial">0</b> 所</span>' +
+              '<span class="bd-partial-tag">期中 <b class="num" id="bdPartial">0</b> 所</span>' +
             '</div>' +
             '<div class="bd-progress-bar"><i class="p-done" id="bdBarDone"></i><i class="p-partial" id="bdBarPartial"></i></div>' +
           '</div>' +
