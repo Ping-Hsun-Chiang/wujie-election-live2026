@@ -1,0 +1,51 @@
+/* 共用基礎樣式：色票、字體與重置 */
+:root {
+  --bg: #0B1120;
+  --bg-2: #0F172A;
+  --panel: #111a2e;
+  --panel-2: #16213a;
+  --line: rgba(148, 163, 184, 0.18);
+  --text: #F8FAFC;
+  --text-2: #CBD5E1;
+  --muted: #94A3B8;
+  --gold: #FBBF24;
+  --gold-2: #F59E0B;
+  --focus: #2563EB;
+  --safe: #22D3A0;
+  --warn: #FB7185;
+  --partial: #FACC15;
+  --done: #22C55E;
+  --none: #475569;
+  --font-ui: "Microsoft JhengHei UI", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", "Heiti TC", system-ui, sans-serif;
+  --font-num: "Bahnschrift", "DIN Alternate", "DIN Condensed", "Roboto Condensed", "Segoe UI", "Arial Narrow", sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+
+.num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+.boot-msg {
+  display: grid; place-items: center; height: 100vh;
+  color: var(--muted); font-size: 20px;
+}
