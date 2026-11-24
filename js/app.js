@@ -41,5 +41,12 @@
     boot();
   });
 
+  // 離線快取（僅 https 或 localhost；file:// 直接開啟時略過）
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () { /* 離線快取失敗不影響主功能 */ });
+    });
+  }
+
   window.App = { getMode: getMode };
 })();
